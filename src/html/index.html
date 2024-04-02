@@ -2,17 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>WebSocket Test</title>
+    <title>WebSocket Crypto Data Request</title>
 </head>
 <body>
-    <h1>WebSocket Test</h1>
+    <h1>WebSocket Crypto Data Request</h1>
+    <label for="coinSelect">Choose a coin:</label>
+    <select id="coinSelect">
+        <option value="ADA">ADA</option>
+        <option value="BTC">BTC</option>
+        <option value="ETH">ETH</option>
+        <option value="LTC">LTC</option>
+        <option value="XRP">XRP</option>
+    </select>
+    <button id="submitBtn">Get Latest Price</button>
     <button id="connectBtn">Connect</button>
     <button id="disconnectBtn" disabled>Disconnect</button>
     <pre id="messages"></pre>
 
-    <script src="../js/index_script.js"></script>
     <!-- Include SweetAlert2 library -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+    <!-- Include your JavaScript file -->
+    <script src="../js/index_script.js"></script>
 </body>
 </html>

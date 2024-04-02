@@ -1,42 +1,21 @@
 const messages = document.getElementById('messages');
 const connectBtn = document.getElementById('connectBtn');
 const disconnectBtn = document.getElementById('disconnectBtn');
+const submitBtn = document.getElementById('submitBtn');
+const coinSelect = document.getElementById('coinSelect');
 
 let socket;
 
 // Event listeners for buttons
 connectBtn.addEventListener('click', connect);
 disconnectBtn.addEventListener('click', disconnect);
+submitBtn.addEventListener('click', getLatestPrice);
 
-// Warn before closing the window
-window.addEventListener('beforeunload', (event) => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        event.preventDefault();
-        event.returnValue = '';
-        confirmDisconnect();
-    }
-});
+// Automatically connect to the WebSocket
+connect();
 
-function confirmDisconnect() {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "Do you want to disconnect the WebSocket connection before leaving?",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, disconnect'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            socket.close(1000, "Closing from client");
-            window.close(); // This will not work for all browsers, as some don't allow scripts to close windows that were not opened by script
-        }
-    });
-}
 function connect() {
-    // Replace with your WebSocket endpoint
     const websocketUrl = 'wss://nk7gy9nchi.execute-api.us-east-1.amazonaws.com/production/';
-
     socket = new WebSocket(websocketUrl);
 
     socket.onopen = function(event) {
@@ -53,22 +32,47 @@ function connect() {
     };
 
     socket.onclose = function(event) {
-        if (event.wasClean) {
-            messages.textContent += `[close] Connection closed cleanly\n`;
-        } else {
-            messages.textContent += '[close] Connection died\n';
-        }
+        messages.textContent += event.wasClean ? '[close] Connection closed cleanly\n' : '[close] Connection died\n';
         updateButtons(false);
     };
+
+    // Add beforeunload event listener
+    window.addEventListener('beforeunload', confirmClose);
 }
 
 function disconnect() {
-    if (!socket) return;
+    if (socket) {
+        socket.close(1000, "Closing from client");
+        messages.textContent += '[info] Disconnected by the client\n';
+        updateButtons(false);
+        window.removeEventListener('beforeunload', confirmClose);
+    }
+}
 
-    socket.close(1000, "Closing from client");
+function confirmClose(event) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        const leavePage = confirm('Do you want to close the connection?');
+        if (leavePage) {
+            disconnect();
+        } else {
+            event.preventDefault();
+        }
+    }
 }
 
 function updateButtons(connected) {
     connectBtn.disabled = connected;
     disconnectBtn.disabled = !connected;
+    submitBtn.disabled = !connected;
+}
+
+function getLatestPrice() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        const selectedCoin = coinSelect.value;
+        const message = { action: 'getLatestPrice', coin: selectedCoin };
+        socket.send(JSON.stringify(message));
+        messages.textContent += `[info] Requested latest price for ${selectedCoin}\n`;
+    } else {
+        messages.textContent += '[error] WebSocket is not connected.\n';
+    }
 }
