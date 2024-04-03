@@ -73,6 +73,9 @@ function connect() {
         }     else if (data.action === 'XRPPredictionData') {
             // Call the function to plot predicted OHLC for XRP
             plotPredictedOHLC(data.predictions);
+        }    else if (data.action === 'BTCPredictionData') {
+            // Call the function to plot predicted OHLC for BTC
+            plotPredictedOHLC(data.predictions);
         }
           
         else {
@@ -131,9 +134,11 @@ function getLatestPrice() {
         // Set a delay and request for synthetic data
         setTimeout(() => sendWebSocketMessage('SyntheticData', selectedCoin), 10); // Delay by 1 second
         if (selectedCoin === 'ADA') {
-            fetchADAPredictionData(); // Call the ADA-specific function
-        }else if (selectedCoin === 'XRP') {
-            fetchXRPPredictionData(); // Call the XRP-specific function
+            fetchADAPredictionData();
+        } else if (selectedCoin === 'XRP') {
+            fetchXRPPredictionData();
+        } else if (selectedCoin === 'BTC') {
+            fetchBTCPredictionData();
         };
 
     } else {
@@ -430,6 +435,16 @@ function fetchXRPPredictionData() {
     if (socket && socket.readyState === WebSocket.OPEN) {
         // Request XRP prediction data
         sendWebSocketMessage('XRPPredictionData', 'XRP');
+    } else {
+        messages.textContent += '[error] WebSocket is not connected.\n';
+    }
+}
+
+// New function to request BTC prediction data
+function fetchBTCPredictionData() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        // Request BTC prediction data
+        sendWebSocketMessage('BTCPredictionData', 'BTC');
     } else {
         messages.textContent += '[error] WebSocket is not connected.\n';
     }
