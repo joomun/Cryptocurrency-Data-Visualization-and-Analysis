@@ -45,6 +45,23 @@ function connect() {
             messages.textContent += `[message] Predicted data received\n`;
             plotPredictionData(data.predictedPoints[0]);
           } 
+
+          else if (data.action === 'ADAPredictionData') {
+            // Get the last known date from the existing chart
+            const existingData = document.getElementById('myDiv').data;
+            let lastKnownDate;
+            if (existingData && existingData.length > 0) {
+                const lastTrace = existingData[existingData.length - 1];
+                lastKnownDate = lastTrace.x[lastTrace.x.length - 1]; // Get the last date of the last trace
+            }
+
+            // Make sure you pass the last known date to the function
+            if (lastKnownDate) {
+                plotPredictedOHLC(data.predictions, lastKnownDate);
+            } else {
+                console.error('Unable to find the last known date from the existing chart data.');
+            }
+        } 
           
         else {
             messages.textContent += `[message] Data received: ${event.data}\n`;
@@ -344,4 +361,35 @@ function fetchADAPredictionData() {
     } else {
         messages.textContent += '[error] WebSocket is not connected.\n';
     }
+}
+
+function plotPredictedOHLC(predictions, lastKnownDate) {
+    // Assume the last known date is passed in ISO format 'YYYY-MM-DD'
+    let lastDate = new Date(lastKnownDate);
+
+    // Create a new trace for predicted OHLC data
+    let predictedOHLC = {
+        x: [],
+        close: [],
+        high: [],
+        low: [],
+        open: [],
+        type: 'ohlc',
+        name: 'Predicted',
+        increasing: { line: { color: 'orange' } },
+        decreasing: { line: { color: 'grey' } },
+    };
+
+    // Iterate over predictions to prepare the trace data for Plotly
+    for (let i = 0; i < predictions.Low[0].length; i++) {
+        let newDate = new Date(lastDate.getTime() + (i + 1) * 24 * 60 * 60 * 1000);
+        predictedOHLC.x.push(newDate.toISOString().split('T')[0]); // Only the date part
+        predictedOHLC.close.push(predictions.Close[0][i]);
+        predictedOHLC.high.push(predictions.High[0][i]);
+        predictedOHLC.low.push(predictions.Low[0][i]);
+        predictedOHLC.open.push(predictions.Open[0][i]);
+    }
+
+    // Now plot the new predicted OHLC data
+    Plotly.addTraces('myDiv', [predictedOHLC]);
 }

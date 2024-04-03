@@ -11,6 +11,9 @@ const dynamodb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-1' });
 const sagemaker = new AWS.SageMakerRuntime({ region: 'us-east-1' });
 
 
+
+
+
 function convertDataForSageMaker(items) {
     console.log('Converting data for SageMaker...');
     // Ensure there's enough data
@@ -98,17 +101,34 @@ async function getPredictionsForPriceType(priceTypeData, endpointName) {
 }
 
 exports.handler = async (event) => {
-    if (event.coin === 'ADA' && event.action === 'ADAPredictionData') {
+    console.log('Received event:', JSON.stringify(event));
+
+    // Parse the body to get the action and coin
+    const body = JSON.parse(event.body);
+    const action = body.action;
+    const coin = body.coin;
+
+    // Check if the action is ADAPredictionData and the coin is ADA
+    if (action === 'ADAPredictionData' && coin === 'ADA') {
         try {
+            const connectionId = event.requestContext.connectionId;
+            const domainName = event.requestContext.domainName;
+            const stage = event.requestContext.stage;
+
+            // Construct the API Gateway Management API endpoint
+            const apiGatewayManagementApi = new AWS.ApiGatewayManagementApi({
+                apiVersion: '2018-11-29',
+                endpoint: `${domainName}/${stage}`
+            });
+
             console.log('Defining SageMaker endpoint names...');
-            // Define your SageMaker endpoint names for each price type
             const priceTypes = {
                 'Low': 'LowADA-v1',
                 'High': 'HighADA-v1',
                 'Open': 'Open-Ada',
                 'Close': 'CloseADA-v1'
             };
-            
+
             console.log('Retrieving latest data points...');
             const latestDataPoints = await getLatestDataPoints('Cryto_Data_1', 'ADA');
 
@@ -118,24 +138,36 @@ exports.handler = async (event) => {
             console.log('Collecting predictions...');
             const predictions = {};
 
-            // Get predictions for each price type
+            // Collect predictions for each price type
             for (const [type, endpointName] of Object.entries(priceTypes)) {
                 console.log(`Processing type: ${type}`);
                 predictions[type] = await getPredictionsForPriceType(formattedData, endpointName);
-                console.log(`Predictions for ${type}:`, predictions[type]);
             }
+
             console.log('All predictions collected:', predictions);
-            return {
-                statusCode: 200,
-                body: JSON.stringify(predictions)
-            };
+
+            // Send a message back to the client with the collected predictions
+            await apiGatewayManagementApi.postToConnection({
+                ConnectionId: connectionId,
+                Data: JSON.stringify({
+                    action: 'ADAPredictionData',
+                    predictions: predictions
+                }),
+            }).promise();
+
+            console.log('Predictions sent to the client.');
+
+            return { statusCode: 200, body: 'Predictions sent to client.' };
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error processing the request:', error);
             return {
                 statusCode: 500,
                 body: JSON.stringify({ error: 'Error processing your request' })
             };
         }
+    } else {
+        console.log('The event did not contain action ADAPredictionData and coin ADA');
+        return { statusCode: 400, body: 'Invalid action or coin type.' };
     }
 };
