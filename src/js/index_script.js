@@ -70,7 +70,10 @@ function connect() {
             // Call the function to plot predicted OHLC using the global lastDataTimestamp
             plotPredictedOHLC(data.predictions);
 
-        } 
+        }     else if (data.action === 'XRPPredictionData') {
+            // Call the function to plot predicted OHLC for XRP
+            plotPredictedOHLC(data.predictions);
+        }
           
         else {
             messages.textContent += `[message] Data received: ${event.data}\n`;
@@ -129,6 +132,8 @@ function getLatestPrice() {
         setTimeout(() => sendWebSocketMessage('SyntheticData', selectedCoin), 10); // Delay by 1 second
         if (selectedCoin === 'ADA') {
             fetchADAPredictionData(); // Call the ADA-specific function
+        }else if (selectedCoin === 'XRP') {
+            fetchXRPPredictionData(); // Call the XRP-specific function
         };
 
     } else {
@@ -418,4 +423,14 @@ function plotPredictedOHLC(predictions, lastKnownDate) {
 
     // Now plot the new predicted OHLC data
     Plotly.addTraces('myDiv', [predictedOHLC]);
+}
+
+// New XRP prediction function
+function fetchXRPPredictionData() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        // Request XRP prediction data
+        sendWebSocketMessage('XRPPredictionData', 'XRP');
+    } else {
+        messages.textContent += '[error] WebSocket is not connected.\n';
+    }
 }
