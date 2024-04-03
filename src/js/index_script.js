@@ -50,7 +50,7 @@ function connect() {
         // Check if the message contains 'allDataPoints'
         if (data.allDataPoints) {
             plotData(data.allDataPoints);
-            promptAndDownloadDataPoints(data.allDataPoints);
+
         }     // Check for 'syntheticData' in the message and plot them
         else if (data.target) { // Assuming 'target' contains the synthetic data
             // Prepare the xValues (time) and yValues (data points)
@@ -60,6 +60,10 @@ function connect() {
             // Call a function to plot the synthetic data
             plotSyntheticData(xValues, yValues);
             fetchPredictedData(yValues.slice(-100), xValues.slice(-100));
+        }    else if (data.action && data.action === 'PredictionData') {
+            messages.textContent += `[message] Predicted data received\n`;
+            plotPredictionData(data.predictedPoints[0]);
+
         }
         else   if (data.action && data.action === 'PredictionData') {
             messages.textContent += `[message] Predicted data received\n`;
@@ -69,14 +73,22 @@ function connect() {
           else if (data.action === 'ADAPredictionData') {
             // Call the function to plot predicted OHLC using the global lastDataTimestamp
             plotPredictedOHLC(data.predictions);
+            Swal.close();
 
         }     else if (data.action === 'XRPPredictionData') {
             // Call the function to plot predicted OHLC for XRP
             plotPredictedOHLC(data.predictions);
+            Swal.close();
         }    else if (data.action === 'BTCPredictionData') {
             // Call the function to plot predicted OHLC for BTC
             plotPredictedOHLC(data.predictions);
+            Swal.close();
         }
+        else if (data.action === 'ETHPredictionData') {
+        // Call the function to plot predicted OHLC for BTC
+        plotPredictedOHLC(data.predictions);
+        Swal.close();
+         }
           
         else {
             messages.textContent += `[message] Data received: ${event.data}\n`;
@@ -127,24 +139,39 @@ function getLatestPrice() {
     if (socket && socket.readyState === WebSocket.OPEN) {
         const selectedCoin = coinSelect.value;
 
+        // Show SweetAlert2 loading indicator
+        Swal.fire({
+            title: 'Loading...',
+            text: 'Please wait while we fetch prediction data.',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
         // Request for latest price data
         sendWebSocketMessage('getLatestPrice', selectedCoin);
-        // Set a longer delay and request for prediction data
-        setTimeout(() => sendWebSocketMessage('PredictionData', selectedCoin), 10); // Delay by 2 seconds
-        // Set a delay and request for synthetic data
-        setTimeout(() => sendWebSocketMessage('SyntheticData', selectedCoin), 10); // Delay by 1 second
+        setTimeout(() => sendWebSocketMessage('PredictionData', selectedCoin), 2000);
+        setTimeout(() => sendWebSocketMessage('SyntheticData', selectedCoin), 1000);
+
         if (selectedCoin === 'ADA') {
             fetchADAPredictionData();
         } else if (selectedCoin === 'XRP') {
             fetchXRPPredictionData();
         } else if (selectedCoin === 'BTC') {
             fetchBTCPredictionData();
-        };
+        }
+        else if (selectedCoin === 'ETH') {
+        fetchETHPredictionData();
+        }
+
 
     } else {
         messages.textContent += '[error] WebSocket is not connected.\n';
     }
 }
+
 
 // Helper function to send WebSocket messages and log the action
 function sendWebSocketMessage(action, selectedCoin) {
@@ -445,6 +472,16 @@ function fetchBTCPredictionData() {
     if (socket && socket.readyState === WebSocket.OPEN) {
         // Request BTC prediction data
         sendWebSocketMessage('BTCPredictionData', 'BTC');
+    } else {
+        messages.textContent += '[error] WebSocket is not connected.\n';
+    }
+}
+
+// New function to request BTC prediction data
+function fetchETHPredictionData() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        // Request BTC prediction data
+        sendWebSocketMessage('ETHPredictionData', 'ETH');
     } else {
         messages.textContent += '[error] WebSocket is not connected.\n';
     }
