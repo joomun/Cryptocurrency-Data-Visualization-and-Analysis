@@ -54,8 +54,9 @@ exports.handler = async (event) => {
         await apigwManagementApi.postToConnection({
             ConnectionId: event.requestContext.connectionId,
             Data: JSON.stringify(responseBody)
+            
         }).promise();
-
+        console.log(predictions);
         return { statusCode: 200, body: 'Data sent.' };
 
     } catch (error) {

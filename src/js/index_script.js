@@ -40,29 +40,10 @@ function connect() {
             plotSyntheticData(xValues, yValues);
             fetchPredictedData(yValues.slice(-100), xValues.slice(-100));
         }
-        else if (data.action && data.action === 'PredictionData') {
-            messages.textContent += `[message] Predicted received: ${event.data}\n`;
-            
-            // Extract the first element from the nested array of predicted points
-            const predictedYValues = data.predictedPoints[0];
-    
-            // Generate the predicted x-axis values starting from lastXValue + 1
-            const predictedXValues = Array.from({ length: predictedYValues.length }, (_, i) => lastXValue + i + 1);
-    
-            // Update the chart with the new predictions
-            const predictedTrace = {
-                x: predictedXValues,
-                y: predictedYValues,
-                type: 'scatter',
-                mode: 'lines',
-                line: {
-                    color: 'red', // Prediction line in red
-                    width: 2
-                }
-            };
-    
-            Plotly.addTraces('Synthetic_Div', predictedTrace);
-        }
+        else   if (data.action && data.action === 'PredictionData') {
+            messages.textContent += `[message] Predicted data received\n`;
+            plotPredictionData(data.predictedPoints[0]);
+          } 
         else {
             messages.textContent += `[message] Data received: ${event.data}\n`;
         }
@@ -202,6 +183,7 @@ function plotSyntheticData(xValues, yValues) {
             color: 'blue', // Change as needed
             width: 1
         }
+        ,name: 'Synthetic Data'
     };
 
     const layout = {
@@ -256,3 +238,59 @@ function fetchPredictedData(last50YValues, last50XValues) {
         console.error('WebSocket is not open.');
     }
 }
+
+
+function plotPredictionData(predictedData) {
+    // Extract the predicted values
+    const predictedMean = predictedData.mean;
+    const predictedQuantile0_1 = predictedData.quantiles["0.1"];
+    const predictedQuantile0_9 = predictedData.quantiles["0.9"];
+  
+    // Generate the predicted x-axis values starting from the last x value + 1
+    const lastXValue = parseInt(document.getElementById('Synthetic_Div').data.slice(-1)[0].x.slice(-1)) || xValues.length;
+    const predictedXValues = Array.from({ length: predictedMean.length }, (_, i) => lastXValue + i + 1);
+  
+    // Mean prediction trace
+    const meanTrace = {
+      x: predictedXValues,
+      y: predictedMean,
+      type: 'scatter',
+      mode: 'lines',
+      line: {
+        color: 'red',
+        width: 2
+      },
+      name: 'Mean Prediction'
+    };
+  
+    // 0.1 Quantile trace
+    const quantile0_1Trace = {
+      x: predictedXValues,
+      y: predictedQuantile0_1,
+      type: 'scatter',
+      mode: 'lines',
+      line: {
+        color: 'blue',
+        width: 2,
+        dash: 'dot' // Different line style for differentiation
+      },
+      name: '0.1 Quantile'
+    };
+  
+    // 0.9 Quantile trace
+    const quantile0_9Trace = {
+      x: predictedXValues,
+      y: predictedQuantile0_9,
+      type: 'scatter',
+      mode: 'lines',
+      line: {
+        color: 'green',
+        width: 2,
+        dash: 'dash'
+      },
+      name: '0.9 Quantile'
+    };
+  
+    // Add new traces to the plot
+    Plotly.addTraces('Synthetic_Div', [meanTrace, quantile0_1Trace, quantile0_9Trace]);
+  }
