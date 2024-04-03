@@ -29,7 +29,16 @@ function connect() {
         // Check if the message contains 'allDataPoints'
         if (data.allDataPoints) {
             plotData(data.allDataPoints);
-        } else {
+        }     // Check for 'syntheticData' in the message and plot them
+        else if (data.target) { // Assuming 'target' contains the synthetic data
+            // Prepare the xValues (time) and yValues (data points)
+            const xValues = data.target.map((_, index) => index); // or use actual time if available
+            const yValues = data.target;
+    
+            // Call a function to plot the synthetic data
+            plotSyntheticData(xValues, yValues);
+        }
+        else {
             messages.textContent += `[message] Data received: ${event.data}\n`;
         }
     };
@@ -77,13 +86,20 @@ function updateButtons(connected) {
 function getLatestPrice() {
     if (socket && socket.readyState === WebSocket.OPEN) {
         const selectedCoin = coinSelect.value;
-        const message = { action: 'getLatestPrice', coin: selectedCoin };
-        socket.send(JSON.stringify(message));
+        // Request for latest price data
+        const priceMessage = { action: 'getLatestPrice', coin: selectedCoin };
+        socket.send(JSON.stringify(priceMessage));
         messages.textContent += `[info] Requested latest price for ${selectedCoin}\n`;
+
+        // Request for synthetic data
+        const syntheticMessage = { action: 'SyntheticData', coin: selectedCoin };
+        socket.send(JSON.stringify(syntheticMessage));
+        messages.textContent += `[info] Requested synthetic data for ${selectedCoin}\n`;
     } else {
         messages.textContent += '[error] WebSocket is not connected.\n';
     }
 }
+
 
 
 function plotData(allDataPoints) {
@@ -104,7 +120,7 @@ function plotData(allDataPoints) {
     };
 
     const layout = {
-        title: 'Data for Coin',
+        title: 'Data for Coin-3rd Party Data',
         dragmode: 'zoom',
         showlegend: false,
         xaxis: {
@@ -140,3 +156,39 @@ function plotData(allDataPoints) {
     Plotly.newPlot('myDiv', [trace], layout);
 }
 
+function plotSyntheticData(xValues, yValues) {
+    const trace = {
+        x: xValues,
+        y: yValues,
+        type: 'scatter',
+        mode: 'lines+markers',
+        marker: {
+            color: 'blue', // Change as needed
+            size: 8
+        },
+        line: {
+            color: 'blue', // Change as needed
+            width: 1
+        }
+    };
+
+    const layout = {
+        title: 'Synthetic Data ',
+        xaxis: {
+            autorange: true,
+            title: 'Index',
+             rangeselector: {
+                x: 0,
+                y: 1.2,
+                xanchor: 'left',
+                font: {size:8},
+              }
+          },
+          yaxis: {
+            autorange: true,
+            title: 'Value',
+          }
+    };
+
+    Plotly.newPlot('Synthetic_Div', [trace], layout);
+}
