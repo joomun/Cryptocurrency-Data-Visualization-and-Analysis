@@ -37,6 +37,27 @@ function connect() {
     
             // Call a function to plot the synthetic data
             plotSyntheticData(xValues, yValues);
+            fetchPredictedData(yValues.slice(-100), xValues.slice(-100));
+        }
+        else if (data.action && data.action === 'PredictionData') {
+            messages.textContent += `[message] Predicted received: ${event.data}\n`;
+            const predictedYValues = data.predictedPoints;
+            const lastXValue = last50XValues[last50XValues.length - 1];
+            const predictedXValues = Array.from({ length: predictedYValues.length }, (_, i) => lastXValue + i + 1);
+    
+            // Update the chart with the new predictions
+            const predictedTrace = {
+                x: predictedXValues,
+                y: predictedYValues,
+                type: 'scatter',
+                mode: 'lines',
+                line: {
+                    color: 'red', // Prediction line in red
+                    width: 2
+                }
+            };
+    
+            Plotly.addTraces('Synthetic_Div', predictedTrace);
         }
         else {
             messages.textContent += `[message] Data received: ${event.data}\n`;
@@ -86,18 +107,25 @@ function updateButtons(connected) {
 function getLatestPrice() {
     if (socket && socket.readyState === WebSocket.OPEN) {
         const selectedCoin = coinSelect.value;
-        // Request for latest price data
-        const priceMessage = { action: 'getLatestPrice', coin: selectedCoin };
-        socket.send(JSON.stringify(priceMessage));
-        messages.textContent += `[info] Requested latest price for ${selectedCoin}\n`;
 
-        // Request for synthetic data
-        const syntheticMessage = { action: 'SyntheticData', coin: selectedCoin };
-        socket.send(JSON.stringify(syntheticMessage));
-        messages.textContent += `[info] Requested synthetic data for ${selectedCoin}\n`;
+        // Request for latest price data
+        sendWebSocketMessage('getLatestPrice', selectedCoin);
+        // Set a longer delay and request for prediction data
+        setTimeout(() => sendWebSocketMessage('PredictionData', selectedCoin), 10); // Delay by 2 seconds
+        // Set a delay and request for synthetic data
+        setTimeout(() => sendWebSocketMessage('SyntheticData', selectedCoin), 10); // Delay by 1 second
+
+
     } else {
         messages.textContent += '[error] WebSocket is not connected.\n';
     }
+}
+
+// Helper function to send WebSocket messages and log the action
+function sendWebSocketMessage(action, selectedCoin) {
+    const message = { action: action, coin: selectedCoin };
+    socket.send(JSON.stringify(message));
+    messages.textContent += `[info] Requested ${action} for ${selectedCoin}\n`;
 }
 
 
@@ -191,4 +219,34 @@ function plotSyntheticData(xValues, yValues) {
     };
 
     Plotly.newPlot('Synthetic_Div', [trace], layout);
+    
+}
+
+
+function fetchPredictedData(last50YValues, last50XValues) {
+    // Ensure that your WebSocket is open before trying to send a message
+    if (socket.readyState === WebSocket.OPEN) {
+        // Prepare the message with the same structure you were using with fetch
+        const message = {
+            action: 'PredictionData',
+            data: {
+                instances: [
+                    {
+                        start: last50XValues[0],
+                        target: last50YValues
+                    }
+                ],
+                configuration: {
+                    num_samples: 50, // Number of samples you want to predict
+                    output_types: ["mean", "quantiles", "samples"],
+                    quantiles: ["0.1", "0.9"]
+                }
+            }
+        };
+
+        // Send the message as a string over the WebSocket
+        socket.send(JSON.stringify(message));
+    } else {
+        console.error('WebSocket is not open.');
+    }
 }
