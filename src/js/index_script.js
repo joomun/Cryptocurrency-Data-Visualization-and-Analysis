@@ -30,6 +30,7 @@ function connect() {
         // Check if the message contains 'allDataPoints'
         if (data.allDataPoints) {
             plotData(data.allDataPoints);
+            promptAndDownloadDataPoints(data.allDataPoints);
         }     // Check for 'syntheticData' in the message and plot them
         else if (data.target) { // Assuming 'target' contains the synthetic data
             // Prepare the xValues (time) and yValues (data points)
@@ -44,6 +45,7 @@ function connect() {
             messages.textContent += `[message] Predicted data received\n`;
             plotPredictionData(data.predictedPoints[0]);
           } 
+          
         else {
             messages.textContent += `[message] Data received: ${event.data}\n`;
         }
@@ -99,7 +101,9 @@ function getLatestPrice() {
         setTimeout(() => sendWebSocketMessage('PredictionData', selectedCoin), 10); // Delay by 2 seconds
         // Set a delay and request for synthetic data
         setTimeout(() => sendWebSocketMessage('SyntheticData', selectedCoin), 10); // Delay by 1 second
-
+        if (selectedCoin === 'ADA') {
+            fetchADAPredictionData(); // Call the ADA-specific function
+        };
 
     } else {
         messages.textContent += '[error] WebSocket is not connected.\n';
@@ -294,3 +298,50 @@ function plotPredictionData(predictedData) {
     // Add new traces to the plot
     Plotly.addTraces('Synthetic_Div', [meanTrace, quantile0_1Trace, quantile0_9Trace]);
   }
+
+function promptAndDownloadDataPoints(dataPoints) {
+    // Using SweetAlert to ask the user
+    Swal.fire({
+        title: 'Download Data Points?',
+        text: "Do you want to download the 3rd party data points for development purposes in json format?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, download it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+        // User confirmed, proceed with the download
+        downloadDataPoints(dataPoints);
+        Swal.fire(
+            'Downloaded!',
+            'Your data points have been downloaded.',
+            'success'
+        );
+        }
+});
+}
+  // This function will handle the creation and download of the JSON file
+function downloadDataPoints(dataPoints) {
+    // Convert data to a JSON string
+    const dataStr = JSON.stringify(dataPoints);
+    // Create a Blob with the JSON string
+    const dataBlob = new Blob([dataStr], {type: "application/json"});
+    // Create an anchor element and set the download attribute
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.href = URL.createObjectURL(dataBlob);
+    downloadAnchor.setAttribute('download', 'dataPoints.json');
+    // Append to the document, trigger the download, and then remove the element
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    document.body.removeChild(downloadAnchor);
+  }
+
+function fetchADAPredictionData() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        // Request ADA prediction data
+        sendWebSocketMessage('ADAPredictionData', 'ADA');
+    } else {
+        messages.textContent += '[error] WebSocket is not connected.\n';
+    }
+}
