@@ -24,6 +24,8 @@ const insertHighLowToDynamoDB = async (coin: string, dataPoint: any) => {
       Currency: tsyms, 
       High: dataPoint.high,
       Low: dataPoint.low,
+      Open: dataPoint.open,
+      Close: dataPoint.close,
     },
   };
 

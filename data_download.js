@@ -63,8 +63,6 @@ var insertHighLowToDynamoDB = function (coin, dataPoint) { return __awaiter(void
                         Currency: tsyms,
                         High: dataPoint.high,
                         Low: dataPoint.low,
-                        Open: dataPoint.open,
-                        Close: dataPoint.close,
                     },
                 };
                 _a.label = 1;
