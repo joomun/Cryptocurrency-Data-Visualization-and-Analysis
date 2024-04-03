@@ -7,6 +7,9 @@ const coinSelect = document.getElementById('coinSelect');
 let socket;
 // Global variable to hold the last X value from the synthetic data plot
 let lastXValue;
+
+let lastDataTimestamp = null; // This will hold the last timestamp from allDataPoints
+
 // Event listeners for buttons
 connectBtn.addEventListener('click', connect);
 disconnectBtn.addEventListener('click', disconnect);
@@ -26,7 +29,24 @@ function connect() {
 
     socket.onmessage = function(event) {
         const data = JSON.parse(event.data);
-    
+        
+        // If you receive a new actual data point, update the last known timestamp
+        if (data.PriceTimeStamp) {
+            // Update global lastDataTimestamp variable
+            lastDataTimestamp = data.PriceTimeStamp;
+
+            // Convert the UNIX timestamp to a JavaScript Date object
+            const lastDate = new Date(lastDataTimestamp * 1000);
+
+            // Output to console or update the DOM as needed
+            console.log("Last data timestamp:", lastDate);
+
+            // Now you can use lastDate to align with your predictions
+            // For example, you can plot the next predictions starting from lastDate
+            // You might want to plot the received data point here as well
+            // plotNewDataPoint(data); // A function you would define to plot the actual data point
+        }
+
         // Check if the message contains 'allDataPoints'
         if (data.allDataPoints) {
             plotData(data.allDataPoints);
@@ -47,20 +67,9 @@ function connect() {
           } 
 
           else if (data.action === 'ADAPredictionData') {
-            // Get the last known date from the existing chart
-            const existingData = document.getElementById('myDiv').data;
-            let lastKnownDate;
-            if (existingData && existingData.length > 0) {
-                const lastTrace = existingData[existingData.length - 1];
-                lastKnownDate = lastTrace.x[lastTrace.x.length - 1]; // Get the last date of the last trace
-            }
+            // Call the function to plot predicted OHLC using the global lastDataTimestamp
+            plotPredictedOHLC(data.predictions);
 
-            // Make sure you pass the last known date to the function
-            if (lastKnownDate) {
-                plotPredictedOHLC(data.predictions, lastKnownDate);
-            } else {
-                console.error('Unable to find the last known date from the existing chart data.');
-            }
         } 
           
         else {
@@ -363,9 +372,26 @@ function fetchADAPredictionData() {
     }
 }
 
+
+// Function to get the last date from the Plotly OHLC plot
+function getLastKnownDateFromPlot() {
+    const plotElement = document.getElementById('myDiv');
+    const plotData = plotElement.data;
+    // Assuming the OHLC data is the first trace
+    const ohlcTrace = plotData && plotData.length > 0 ? plotData[0] : null;
+    return ohlcTrace ? ohlcTrace.x[ohlcTrace.x.length - 1] : null;
+}
+
 function plotPredictedOHLC(predictions, lastKnownDate) {
-    // Assume the last known date is passed in ISO format 'YYYY-MM-DD'
-    let lastDate = new Date(lastKnownDate);
+    console.log(lastDataTimestamp)
+    // Make sure lastDataTimestamp is not null
+    if (!lastDataTimestamp) {
+        console.error('The last data timestamp is not set.');
+        return;
+    }
+
+    // Convert lastDataTimestamp to a Date object
+    let lastDate = new Date(lastDataTimestamp * 1000); // Assuming the timestamp is in seconds
 
     // Create a new trace for predicted OHLC data
     let predictedOHLC = {
@@ -382,7 +408,7 @@ function plotPredictedOHLC(predictions, lastKnownDate) {
 
     // Iterate over predictions to prepare the trace data for Plotly
     for (let i = 0; i < predictions.Low[0].length; i++) {
-        let newDate = new Date(lastDate.getTime() + (i + 1) * 24 * 60 * 60 * 1000);
+        let newDate = new Date(lastDate.getTime() + i * 24 * 60 * 60 * 1000);
         predictedOHLC.x.push(newDate.toISOString().split('T')[0]); // Only the date part
         predictedOHLC.close.push(predictions.Close[0][i]);
         predictedOHLC.high.push(predictions.High[0][i]);
