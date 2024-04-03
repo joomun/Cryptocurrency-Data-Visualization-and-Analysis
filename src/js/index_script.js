@@ -391,7 +391,7 @@ function plotPredictedOHLC(predictions, lastKnownDate) {
     }
 
     // Convert lastDataTimestamp to a Date object
-    let lastDate = new Date(lastDataTimestamp * 1000); // Assuming the timestamp is in seconds
+    let lastDate = new Date(((lastDataTimestamp+1) * 1000)); // Assuming the timestamp is in seconds
 
     // Create a new trace for predicted OHLC data
     let predictedOHLC = {
@@ -402,8 +402,8 @@ function plotPredictedOHLC(predictions, lastKnownDate) {
         open: [],
         type: 'ohlc',
         name: 'Predicted',
-        increasing: { line: { color: 'orange' } },
-        decreasing: { line: { color: 'grey' } },
+        increasing: { line: { color: 'blue' } },
+        decreasing: { line: { color: 'black' } },
     };
 
     // Iterate over predictions to prepare the trace data for Plotly
