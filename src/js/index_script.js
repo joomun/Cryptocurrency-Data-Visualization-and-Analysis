@@ -5,7 +5,8 @@ const submitBtn = document.getElementById('submitBtn');
 const coinSelect = document.getElementById('coinSelect');
 
 let socket;
-
+// Global variable to hold the last X value from the synthetic data plot
+let lastXValue;
 // Event listeners for buttons
 connectBtn.addEventListener('click', connect);
 disconnectBtn.addEventListener('click', disconnect);
@@ -41,8 +42,11 @@ function connect() {
         }
         else if (data.action && data.action === 'PredictionData') {
             messages.textContent += `[message] Predicted received: ${event.data}\n`;
-            const predictedYValues = data.predictedPoints;
-            const lastXValue = last50XValues[last50XValues.length - 1];
+            
+            // Extract the first element from the nested array of predicted points
+            const predictedYValues = data.predictedPoints[0];
+    
+            // Generate the predicted x-axis values starting from lastXValue + 1
             const predictedXValues = Array.from({ length: predictedYValues.length }, (_, i) => lastXValue + i + 1);
     
             // Update the chart with the new predictions
@@ -219,7 +223,9 @@ function plotSyntheticData(xValues, yValues) {
     };
 
     Plotly.newPlot('Synthetic_Div', [trace], layout);
-    
+        // Return the last X value for later use
+    lastXValue = xValues[xValues.length - 1];
+    return lastXValue;
 }
 
 
