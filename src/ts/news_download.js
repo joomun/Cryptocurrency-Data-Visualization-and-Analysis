@@ -75,7 +75,7 @@ var fetchNewsArticles = function (query) { return __awaiter(void 0, void 0, void
         }
     });
 }); };
-var storeArticleInDynamoDB = function (article) { return __awaiter(void 0, void 0, void 0, function () {
+var storeArticleInDynamoDB = function (article, coin) { return __awaiter(void 0, void 0, void 0, function () {
     var params, error_2;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -84,6 +84,7 @@ var storeArticleInDynamoDB = function (article) { return __awaiter(void 0, void 
                     TableName: tableName,
                     Item: {
                         News_ID: article.url, // Assuming the article URL is unique and using it as News_ID
+                        Coin: coin, // Storing the coin type associated with the article
                         Content: article
                     }
                 };
@@ -93,11 +94,11 @@ var storeArticleInDynamoDB = function (article) { return __awaiter(void 0, void 
                 return [4 /*yield*/, documentClient.put(params).promise()];
             case 2:
                 _a.sent();
-                console.log("Successfully stored article with URL: ".concat(article.url));
+                console.log("Successfully stored article about ".concat(coin, " with URL: ").concat(article.url));
                 return [3 /*break*/, 4];
             case 3:
                 error_2 = _a.sent();
-                console.error("Error storing article with URL: ".concat(article.url), error_2);
+                console.error("Error storing article about ".concat(coin, " with URL: ").concat(article.url), error_2);
                 return [3 /*break*/, 4];
             case 4: return [2 /*return*/];
         }
@@ -124,9 +125,9 @@ var fetchAndAnalyzeNewsArticles = function () { return __awaiter(void 0, void 0,
             case 3:
                 if (!(_a < articles_1.length)) return [3 /*break*/, 6];
                 article = articles_1[_a];
-                return [4 /*yield*/, storeArticleInDynamoDB(article)];
+                return [4 /*yield*/, storeArticleInDynamoDB(article, coin)];
             case 4:
-                _b.sent();
+                _b.sent(); // Pass the coin to the store function
                 _b.label = 5;
             case 5:
                 _a++;
@@ -142,4 +143,5 @@ var fetchAndAnalyzeNewsArticles = function () { return __awaiter(void 0, void 0,
         }
     });
 }); };
+fetchAndAnalyzeNewsArticles();
 fetchAndAnalyzeNewsArticles();

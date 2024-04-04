@@ -92,6 +92,7 @@ function connect() {
           
         else {
             messages.textContent += `[message] Data received: ${event.data}\n`;
+            scrollToBottom(messages); // Scroll to bottom after update
         }
     };
     
@@ -254,6 +255,7 @@ function plotSyntheticData(xValues, yValues) {
     };
 
     const layout = {
+        
         title: 'Synthetic Data ',
         xaxis: {
             autorange: true,
@@ -361,6 +363,11 @@ function plotPredictionData(predictedData) {
     // Add new traces to the plot
     Plotly.addTraces('Synthetic_Div', [meanTrace, quantile0_1Trace, quantile0_9Trace]);
   }
+
+function scrollToBottom(element) {
+element.scrollTop = element.scrollHeight;
+}
+
 
 function promptAndDownloadDataPoints(dataPoints) {
     // Using SweetAlert to ask the user

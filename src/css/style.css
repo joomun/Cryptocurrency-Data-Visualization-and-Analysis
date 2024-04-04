@@ -1,0 +1,71 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Style for the header */
+header {
+    display: flex;
+    justify-content: center; /* Centers logo horizontally */
+    align-items: center; /* Centers logo vertically */
+    width: 100%; /* Full width */
+    height: 10vh; /* 5% of the viewport height */
+    background-color: #021D2D; /* Example background color, change as needed */
+}
+
+/* Logo image style to ensure it's not too large for the header */
+#logo {
+    max-height: 100%; /* Ensures the logo is never taller than the header */
+    max-width: 100%; /* Ensures the logo is never wider than the header */
+}
+body{
+    background-color: #021D2D;
+    color: white;
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%; /* Full width */
+}
+
+#myDiv{
+    background-color: #021D2D;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    background-color: #021D2D;
+}
+
+#messages {
+    background-color: #021D2D;
+    color: #ffffff; /* Assuming you want the text to be white for visibility */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* changed to flex-start to align text to the top */
+    justify-content: flex-start; /* changed to flex-start to align text to the top */
+    width: 80%;
+    margin: 0 auto; /* Centering the pre element if needed */
+    padding: 10px; /* Add padding for aesthetics */
+    max-height: calc(1em * 4); /* Adjust '1em' if your line height is different */
+    overflow-y: auto; /* Adds a scrollbar when content exceeds max-height */
+    font-family: monospace; /* Typically preformatted text is monospace */
+    white-space: pre-wrap; /* Ensures text wraps and respects new lines and spaces */
+    word-break: break-word; /* To prevent horizontal scrolling on long words or URLs */
+    margin-bottom: 10px;
+}
+
+
+#Synthetic_Div{
+    background-color: #021D2D;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    background-color: #021D2D;
+}

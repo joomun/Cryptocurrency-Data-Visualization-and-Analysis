@@ -32,22 +32,24 @@ const fetchNewsArticles = async (query: string) => {
   }
 };
 
-const storeArticleInDynamoDB = async (article: any) => {
+const storeArticleInDynamoDB = async (article: any, coin: string) => {
   const params = {
     TableName: tableName,
     Item: {
       News_ID: article.url, // Assuming the article URL is unique and using it as News_ID
+      Coin: coin, // Storing the coin type associated with the article
       Content: article
     }
   };
 
   try {
     await documentClient.put(params).promise();
-    console.log(`Successfully stored article with URL: ${article.url}`);
+    console.log(`Successfully stored article about ${coin} with URL: ${article.url}`);
   } catch (error) {
-    console.error(`Error storing article with URL: ${article.url}`, error);
+    console.error(`Error storing article about ${coin} with URL: ${article.url}`, error);
   }
 };
+
 
 const fetchAndAnalyzeNewsArticles = async () => {
   const coins = ['bitcoin', 'ethereum', 'ripple', 'litecoin', 'cardano'];
@@ -58,11 +60,14 @@ const fetchAndAnalyzeNewsArticles = async () => {
     const articles = await fetchNewsArticles(coin);
 
     for (const article of articles) {
-      await storeArticleInDynamoDB(article);
+      await storeArticleInDynamoDB(article, coin); // Pass the coin to the store function
     }
     
     await new Promise(resolve => setTimeout(resolve, delayBetweenRequests));
   }
 };
+
+fetchAndAnalyzeNewsArticles();
+
 
 fetchAndAnalyzeNewsArticles();
