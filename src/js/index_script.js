@@ -40,13 +40,23 @@ function connect() {
 
             // Output to console or update the DOM as needed
             console.log("Last data timestamp:", lastDate);
+                    // Assuming you have a coin symbol in your data object
+            const coinSymbol = data.Coin || 'Unknown Coin'; // Replace 'Unknown Coin' with actual coin symbol variable if available
+
+            // Update the last updated date in the DOM
+            const lastUpdatedDateElement = document.getElementById('lastUpdatedDate');
+            lastUpdatedDateElement.textContent = `${coinSymbol}: ${lastDate.toLocaleString()}`;
+            
 
             // Now you can use lastDate to align with your predictions
             // For example, you can plot the next predictions starting from lastDate
             // You might want to plot the received data point here as well
             // plotNewDataPoint(data); // A function you would define to plot the actual data point
         }
-
+        if (data.action === 'Fetch_sentiment') {
+            // Assuming the server sends the sentiment data with this action
+            displaySentimentData(data.sentimentData);
+        }
         // Check if the message contains 'allDataPoints'
         if (data.allDataPoints) {
             plotData(data.allDataPoints);
@@ -88,7 +98,11 @@ function connect() {
         // Call the function to plot predicted OHLC for BTC
         plotPredictedOHLC(data.predictions);
         Swal.close();
-         }
+         }    else if (data.action === 'LTCPredictionData') {
+            // Call the function to plot predicted OHLC for LTC
+            plotPredictedOHLC(data.predictions);
+            Swal.close();
+        }
           
         else {
             messages.textContent += `[message] Data received: ${event.data}\n`;
@@ -165,8 +179,12 @@ function getLatestPrice() {
         }
         else if (selectedCoin === 'ETH') {
         fetchETHPredictionData();
+        }    else if (selectedCoin === 'LTC') { // Add this else-if block for LTC
+            fetchLTCPredictionData();
         }
 
+        // Add a new WebSocket message request for sentiment data
+        sendWebSocketMessage('Fetch_sentiment', selectedCoin);
 
     } else {
         messages.textContent += '[error] WebSocket is not connected.\n';
@@ -492,4 +510,50 @@ function fetchETHPredictionData() {
     } else {
         messages.textContent += '[error] WebSocket is not connected.\n';
     }
+}
+
+function updateLastUpdatedDate(date, coin) {
+    const lastUpdatedDateElement = document.getElementById('lastUpdatedDate');
+    lastUpdatedDateElement.textContent = `${coin}: ${date.toLocaleString()}`;
+}
+
+
+function fetchLTCPredictionData() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        // Request LTC prediction data
+        sendWebSocketMessage('LTCPredictionData', 'LTC');
+    } else {
+        messages.textContent += '[error] WebSocket is not connected.\n';
+    }
+}
+
+function displaySentimentData(sentimentData) {
+    // Extracting timestamps and sentiment scores from the sentiment data
+    const timestamps = sentimentData.map(data => data.timestamp);
+    const sentimentScores = sentimentData.map(data => data.sentimentScore);
+
+    // Define the plot data
+    const plotData = [{
+        x: timestamps,
+        y: sentimentScores,
+        type: 'scatter',
+        mode: 'lines',
+        marker: {
+            color: 'blue' // You can customize the color as needed
+        }
+    }];
+
+    // Define the layout for the plot
+    const layout = {
+        title: 'Sentiment Data',
+        xaxis: {
+            title: 'Timestamp'
+        },
+        yaxis: {
+            title: 'Sentiment Score'
+        }
+    };
+
+    // Plot the graph on the specified div
+    Plotly.newPlot('sentimentGraphDiv', plotData, layout);
 }

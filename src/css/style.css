@@ -57,6 +57,7 @@ body{
     white-space: pre-wrap; /* Ensures text wraps and respects new lines and spaces */
     word-break: break-word; /* To prevent horizontal scrolling on long words or URLs */
     margin-bottom: 10px;
+    margin-top: 10px;
 }
 
 
@@ -68,4 +69,40 @@ body{
     justify-content: center;
     width: 80%;
     background-color: #021D2D;
+}
+
+h1 {
+    font-size: 2.5em;
+    margin-top: 20px;
+    color: #04D9B2; /* A bright color for the main title */
+}
+
+select, button {
+    margin: 10px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #046582;
+    color: white;
+    font-size: 1em;
+    cursor: pointer;
+    outline: none;
+}
+
+button:disabled {
+    opacity: 0.5;
+}
+
+#lastUpdated {
+    font-size: 1em;
+    background-color: #033C47;
+    padding: 10px;
+    border-radius: 5px;
+    display: inline-block;
+    margin: 20px auto;
+}
+
+#lastUpdatedDate {
+    font-weight: bold;
+    color: #04D9B2; /* Match the title's color or choose another accent color */
 }
