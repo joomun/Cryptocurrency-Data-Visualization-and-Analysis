@@ -28,6 +28,7 @@ function connect() {
     };
 
     socket.onmessage = function(event) {
+        console.log("Received data:", event.data);
         const data = JSON.parse(event.data);
         
         // If you receive a new actual data point, update the last known timestamp
@@ -55,7 +56,9 @@ function connect() {
         }
         if (data.action === 'Fetch_sentiment') {
             // Assuming the server sends the sentiment data with this action
+            console.log('Sentiment data received:', data.sentimentData);
             displaySentimentData(data.sentimentData);
+
         }
         // Check if the message contains 'allDataPoints'
         if (data.allDataPoints) {
@@ -78,6 +81,7 @@ function connect() {
         else   if (data.action && data.action === 'PredictionData') {
             messages.textContent += `[message] Predicted data received\n`;
             plotPredictionData(data.predictedPoints[0]);
+            Swal.close();
           } 
 
           else if (data.action === 'ADAPredictionData') {
@@ -85,10 +89,12 @@ function connect() {
             plotPredictedOHLC(data.predictions);
             Swal.close();
 
+
         }     else if (data.action === 'XRPPredictionData') {
             // Call the function to plot predicted OHLC for XRP
             plotPredictedOHLC(data.predictions);
             Swal.close();
+
         }    else if (data.action === 'BTCPredictionData') {
             // Call the function to plot predicted OHLC for BTC
             plotPredictedOHLC(data.predictions);
@@ -97,11 +103,12 @@ function connect() {
         else if (data.action === 'ETHPredictionData') {
         // Call the function to plot predicted OHLC for BTC
         plotPredictedOHLC(data.predictions);
-        Swal.close();
+
          }    else if (data.action === 'LTCPredictionData') {
             // Call the function to plot predicted OHLC for LTC
             plotPredictedOHLC(data.predictions);
             Swal.close();
+
         }
           
         else {
@@ -157,7 +164,7 @@ function getLatestPrice() {
         // Show SweetAlert2 loading indicator
         Swal.fire({
             title: 'Loading...',
-            text: 'Please wait while we fetch prediction data.',
+            text: 'Please wait while we fetch prediction data & Sentiment Analysis Data.',
             allowOutsideClick: false,
             showConfirmButton: false,
             willOpen: () => {
@@ -528,32 +535,130 @@ function fetchLTCPredictionData() {
 }
 
 function displaySentimentData(sentimentData) {
-    // Extracting timestamps and sentiment scores from the sentiment data
-    const timestamps = sentimentData.map(data => data.timestamp);
-    const sentimentScores = sentimentData.map(data => data.sentimentScore);
+    // Sort sentiment data by timestamp
+    sentimentData.sort((a, b) => new Date(a.timestamps) - new Date(b.timestamps));
 
-    // Define the plot data
-    const plotData = [{
-        x: timestamps,
-        y: sentimentScores,
-        type: 'scatter',
-        mode: 'lines',
-        marker: {
-            color: 'blue' // You can customize the color as needed
+    // Calculate average sentiment score
+    const averageSentiment = sentimentData.reduce((acc, data) => acc + data.sentimentScore, 0) / sentimentData.length;
+
+    // Separate data based on average sentiment score
+    const aboveAverage = sentimentData.filter(data => data.sentimentScore >= averageSentiment);
+    const belowAverage = sentimentData.filter(data => data.sentimentScore < averageSentiment);
+
+    // Define the plot data for above and below average sentiment
+    const plotData = [
+        {
+            x: aboveAverage.map(data => new Date(data.timestamps)),
+            y: aboveAverage.map(data => data.sentimentScore),
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: {
+                color: 'blue',
+                width: 2
+            },
+            name: `Positive Sentiment (>= ${averageSentiment.toFixed(2)})`
+        },
+        {
+            x: belowAverage.map(data => new Date(data.timestamps)),
+            y: belowAverage.map(data => data.sentimentScore),
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: {
+                color: 'red',
+                width: 2
+            },
+            name: `Negative Sentiment (< ${averageSentiment.toFixed(2)})`
         }
-    }];
+    ];
 
-    // Define the layout for the plot
+    // Define the layout for the plot with added legend and average line
     const layout = {
-        title: 'Sentiment Data',
+        title: `Sentiment Scores for ${coinSelect.value}`,
         xaxis: {
-            title: 'Timestamp'
+            title: 'Time',
+            type: 'date'
         },
         yaxis: {
-            title: 'Sentiment Score'
-        }
+            title: 'Sentiment Score',
+            range: [0, 1],
+            // Include a line indicating the average sentiment score
+            zeroline: true,
+            zerolinewidth: 1.5,
+            zerolinecolor: 'grey'
+        },
+        margin: {
+            l: 50,
+            r: 50,
+            b: 100,
+            t: 100,
+            pad: 4
+        },
+        shapes: [{
+            type: 'line',
+            xref: 'paper',
+            x0: 0,
+            y0: averageSentiment,
+            x1: 1,
+            y1: averageSentiment,
+            line:{
+                color: 'grey',
+                width: 2,
+                dash: 'dashdot'
+            }
+        }],
+        annotations: [{
+            xref: 'paper',
+            y: averageSentiment,
+            x: 1,
+            xanchor: 'left',
+            text: `Average sentiment: ${averageSentiment.toFixed(2)}`,
+            showarrow: false,
+            font: {
+                color: 'grey',
+                size: 12
+            }
+        }],
+        showlegend: true,
     };
 
-    // Plot the graph on the specified div
-    Plotly.newPlot('sentimentGraphDiv', plotData, layout);
+        // Define the plot data for the pie chart
+        const pieChartData = [
+            {
+                values: [aboveAverage.length, belowAverage.length],
+                labels: ['Positive Sentiment', 'Negative Sentiment'],
+                type: 'pie',
+                marker: {
+                    colors: ['blue', 'red']
+                },
+                hoverinfo: 'label+percent',
+                textinfo: 'label+percent'
+            }
+        ];
+    
+        // Define the layout for the pie chart
+        const pieChartLayout = {
+            title: `Sentiment Distribution for ${coinSelect.value}`,
+            showlegend: true
+        };
+    
+        // Plot the pie chart
+        Plotly.newPlot('pieChartDiv', pieChartData, pieChartLayout);
+
+    const graphDiv = document.getElementById('sentimentGraphDiv');
+    
+    if (graphDiv.data) {
+        Plotly.update(graphDiv, plotData, layout);
+    } else {
+        Plotly.newPlot(graphDiv, plotData, layout, { responsive: true });
+    }
+    
+    // Display the overall sentiment score for the day
+    displayOverallSentiment(aboveAverage.length, belowAverage.length);
+}
+
+function displayOverallSentiment(aboveAverageCount, belowAverageCount) {
+    const sentimentDiv = document.getElementById('overallSentiment');
+    const overallSentiment = aboveAverageCount > belowAverageCount ? 'Positive' : 'Negative';
+    sentimentDiv.textContent = `Overall Sentiment for the Day: ${overallSentiment}`;
+    
 }
